@@ -104,7 +104,7 @@ const generateProfessionalTreeText = (astrolabe: any, data: UserData) => {
 
   let text = "文墨天机紫微斗数命盘\n│\n";
   text += "├API 版本 : 1.1.1\n";
-  text += "├App版本 : 2.5.3\n";
+  text += "├App版本 : 2.5.4 (UI-Update-v2)\n";
   text += "├安星码 : C5VUC\n";
   text += "├符号定义\n";
   text += "│ ├(↓:离心自化)\n";
