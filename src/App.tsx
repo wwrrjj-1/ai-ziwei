@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Layout, FileText, Settings2, Info, Bot, MessageCircle, Send, Sparkles, Clock, RefreshCw, User, Calendar } from 'lucide-react';
+import { Layout, FileText, Settings2, Info, Bot, MessageCircle, Send, Sparkles, Clock, RefreshCw, User, Calendar, Play } from 'lucide-react';
 import { astro } from 'iztro';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -329,38 +329,44 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
   };
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b flex justify-between items-center bg-purple-50">
+    <div className="flex-grow flex flex-col bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-h-[500px] mb-4">
+      <div className="p-4 md:p-5 border-b flex justify-between items-center bg-gradient-to-r from-purple-50 to-white">
         <div className="flex items-center gap-2 text-purple-800 font-bold">
-          <Bot className="w-5 h-5" /> DeepSeek 专家级深度命理报告
+          <Sparkles className="w-5 h-5 text-purple-600" /> DeepSeek 专家级深度命理报告
         </div>
         <button
           onClick={startAnalysis}
           disabled={loading}
-          className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-2"
         >
-          <span className="flex items-center justify-center w-4 h-4">
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          </span>
-          <span>{analysis ? '重新排盘分析' : '开始专家分析'}</span>
+          {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          <span>{analysis ? '重新生成分析' : '开始专家分析'}</span>
         </button>
       </div>
-      <div className="flex-grow overflow-auto p-8 relative">
-        {loading ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
-            <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-            <p className="animate-pulse font-medium">大师正在推演流年大限，请稍候...</p>
-          </div>
-        ) : analysis ? (
-          <div className="prose prose-slate max-w-none text-gray-800 leading-relaxed font-sans">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysis}</ReactMarkdown>
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-4">
-            <Bot className="w-20 h-20 opacity-10" />
-            <p>点击上方按钮，生成万字深度详批</p>
-          </div>
-        )}
+      <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-slate-50/30">
+        <div className="max-w-3xl mx-auto">
+          {loading ? (
+            <div className="h-64 flex flex-col items-center justify-center text-gray-500 gap-4">
+              <div className="w-12 h-12 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin"></div>
+              <p className="animate-pulse font-medium text-purple-800">大师正在挑灯推演，请稍候...</p>
+            </div>
+          ) : analysis ? (
+            <div className="prose prose-indigo prose-sm md:prose-base max-w-none text-gray-800 leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysis}</ReactMarkdown>
+              <div className="h-20" /> {/* Bottom spacer for better reading */}
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-gray-400 gap-6">
+              <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center">
+                <Bot className="w-12 h-12 text-purple-200" />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-gray-500 font-bold">准备就绪</p>
+                <p className="text-sm">点击上方按钮，开启由 DeepSeek 强力驱动的万字详批</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -439,28 +445,32 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f0f2f5]">
-      <div className="h-14 bg-white border-b flex items-center px-4 shadow-sm shrink-0">
-        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-3">
+    <div className="flex-grow flex flex-col bg-[#F8FAFC] rounded-xl shadow-xl border border-gray-100 overflow-hidden min-h-[500px]">
+      <div className="h-14 md:h-16 bg-white border-b flex items-center px-5 shadow-sm shrink-0">
+        <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white mr-3 shadow-md">
           <Bot className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="font-bold text-gray-800">智谱 AI 命理解读</h3>
-          <p className="text-xs text-green-500 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Expert Mode
+          <h3 className="font-bold text-gray-800">命理专家 · 智谱 AI</h3>
+          <p className="text-[10px] text-green-500 flex items-center gap-1 font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online & Consulting
           </p>
         </div>
       </div>
 
-      <div className="flex-grow overflow-auto p-4 space-y-4" ref={scrollRef}>
+      <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4" ref={scrollRef}>
         {messages.length === 0 && (
-          <div className="text-center text-gray-400 mt-10 text-sm">
-            <p>命盘数据已加载</p>
-            <p className="mt-2 text-gray-500 font-medium">您可以咨询关于事业、财运、婚姻的详细流年运势</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {['分析我未来三年的财运', '我的婚姻状况如何？', '今年工作有变动吗？'].map(q => (
-                <button key={q} onClick={() => setInput(q)} className="bg-white px-3 py-1 rounded-full border hover:bg-gray-50 transition-colors text-blue-600">{q}</button>
-              ))}
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
+              <MessageCircle className="w-8 h-8 text-blue-200" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-gray-400 text-sm">命主数据已同步，您可以开始咨询</p>
+              <div className="flex flex-wrap justify-center gap-2 mt-4 px-4">
+                {['分析未来三年财运', '我的婚姻状况如何？', '今年事业会有变动吗？'].map(q => (
+                  <button key={q} onClick={() => setInput(q)} className="bg-white px-4 py-2 rounded-xl border border-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-50 transition-all shadow-sm active:scale-95">{q}</button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -762,18 +772,23 @@ export default function App() {
           </div>
         </aside>
 
-        {/* View Area - Mobile optimized scroll & padding */}
-        <main className="flex-grow bg-[#F5F7FA] overflow-y-auto overflow-x-hidden flex flex-col items-center relative pb-[100px] md:pb-8">
-          <div className="w-full max-w-[1000px] p-2 md:p-8">
+        {/* View Area - Fixed Viewport Logic */}
+        <main className={cn(
+          "flex-grow bg-[#F5F7FA] relative flex flex-col items-center overflow-x-hidden",
+          view === 'chart' ? "overflow-y-auto pb-[130px] md:pb-8" : "overflow-hidden" // Full screen for AI views
+        )}>
+          <div className={cn(
+            "w-full p-2 md:p-8 flex flex-col shrink-0",
+            view === 'chart' ? "max-w-[1000px]" : "max-w-6xl h-full"
+          )}>
             {view === 'chart' && (
-              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-xl border border-gray-100 p-1 md:p-1 overflow-hidden flex justify-center min-h-[300px]">
+              <div ref={chartOuterRef} className="w-full bg-white shadow-xl md:shadow-2xl rounded-2xl border border-gray-100 p-1 md:p-2 overflow-hidden flex justify-center min-h-[300px]">
                 <div
                   className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 transition-transform duration-300 ease-out origin-top"
                   style={{
                     width: '700px',
                     transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
-                    // Crucial: adjust height of the placeholder to match scaled content
-                    marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '0px'
+                    marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '10px'
                   }}
                 >
                   {/* Center Box */}
@@ -836,7 +851,11 @@ export default function App() {
               </div>
             )}
 
-            {view === 'text' && <TreeAnalysis astrolabe={astrolabe} data={data} />}
+            {view === 'text' && (
+              <div className="flex-grow h-full overflow-hidden">
+                <TreeAnalysis astrolabe={astrolabe} data={data} />
+              </div>
+            )}
             {view === 'analysis' && (
               <AIAnalysis
                 chartData={expertChartText}
@@ -845,14 +864,12 @@ export default function App() {
               />
             )}
             {view === 'chat' && (
-              <div className="h-full rounded-xl overflow-hidden shadow-lg border border-gray-200">
-                <ChatInterface
-                  chartData={expertChartText}
-                  messages={chatMessages}
-                  setMessages={setChatMessages}
-                  existingAnalysis={aiAnalysisResult}
-                />
-              </div>
+              <ChatInterface
+                chartData={expertChartText}
+                messages={chatMessages}
+                setMessages={setChatMessages}
+                existingAnalysis={aiAnalysisResult}
+              />
             )}
           </div>
 
