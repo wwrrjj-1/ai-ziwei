@@ -544,9 +544,11 @@ export default function App() {
   useEffect(() => {
     const updateScale = () => {
       if (window.innerWidth < 768 && chartOuterRef.current) {
-        const containerWidth = chartOuterRef.current.clientWidth;
-        // Target 700px min width for the chart to be readable
-        const scale = (containerWidth - 16) / 700;
+        // Use document element clientWidth for more reliable measurement on mobile
+        const containerWidth = document.documentElement.clientWidth;
+        const padding = 24; // p-2 or p-3 equivalent
+        const availableWidth = containerWidth - padding;
+        const scale = availableWidth / 700;
         setChartScale(Math.min(scale, 1));
       } else {
         setChartScale(1);
@@ -759,16 +761,17 @@ export default function App() {
           </div>
         </aside>
 
-        {/* View Area - Reduced padding on mobile */}
-        <main className="flex-grow bg-[#F5F7FA] p-2 md:p-8 overflow-auto flex justify-center relative pb-20 md:pb-8">
-          <div className="w-full max-w-[1000px] h-full flex flex-col">
+        {/* View Area - Mobile optimized scroll & padding */}
+        <main className="flex-grow bg-[#F5F7FA] overflow-y-auto overflow-x-hidden flex flex-col items-center relative pb-[100px] md:pb-8">
+          <div className="w-full max-w-[1000px] p-2 md:p-8">
             {view === 'chart' && (
-              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-sm border border-gray-200 p-0.5 md:p-1 overflow-hidden flex justify-center">
+              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-xl border border-gray-100 p-1 md:p-1 overflow-hidden flex justify-center min-h-[300px]">
                 <div
-                  className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-300 transition-transform duration-300 ease-out origin-top"
+                  className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 transition-transform duration-300 ease-out origin-top"
                   style={{
                     width: '700px',
                     transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
+                    // Crucial: adjust height of the placeholder to match scaled content
                     marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '0px'
                   }}
                 >
@@ -852,20 +855,20 @@ export default function App() {
             )}
           </div>
 
-          {/* Mobile Bottom Quick Actions */}
+          {/* Mobile Bottom Quick Actions - Forced visibility with higher z-index and backdrop */}
           {view === 'chart' && (
-            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 p-4 flex gap-4 md:hidden z-[60] shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
+            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 p-4 pb-6 flex gap-3 md:hidden z-[100] shadow-[0_-10px_25px_rgba(0,0,0,0.1)]">
               <button
                 onClick={() => setView('analysis')}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl py-4 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-purple-200 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl py-4 px-2 flex items-center justify-center gap-1.5 font-bold shadow-lg shadow-purple-200 active:scale-95 transition-all text-sm"
               >
-                <Sparkles className="w-5 h-5" /> 专家深度分析
+                <Sparkles className="w-5 h-5" /> 专家分析
               </button>
               <button
                 onClick={() => setView('chat')}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl py-4 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl py-4 px-2 flex items-center justify-center gap-1.5 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-sm"
               >
-                <MessageCircle className="w-5 h-5" /> 命理专家咨询
+                <MessageCircle className="w-5 h-5" /> 在线咨询
               </button>
             </div>
           )}
