@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, Component, type ReactNode } from 'react';
 import { Layout, FileText, Settings2, Info, Bot, MessageCircle, Send, Sparkles, Clock, RefreshCw, User, Calendar, Play } from 'lucide-react';
 import { astro } from 'iztro';
 import { clsx, type ClassValue } from 'clsx';
@@ -12,6 +12,64 @@ import './App.css';
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+// Error Boundary to prevent crashes during streaming
+class MarkdownErrorBoundary extends Component<{ children: ReactNode, fallback?: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode, fallback?: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('Markdown render error:', error);
+  }
+
+  // Reset error state when children change (new content)
+  componentDidUpdate(prevProps: { children: ReactNode }) {
+    if (prevProps.children !== this.props.children && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div className="text-gray-500">加载中...</div>;
+    }
+    return this.props.children;
+  }
+}
+
+// Safe Markdown wrapper - only render Markdown when content is stable
+const SafeMarkdown = ({ content, isLoading }: { content: string, isLoading?: boolean }) => {
+  // Ensure content is always a valid string
+  const safeContent = typeof content === 'string' ? content : String(content || '');
+
+  // During streaming, show plain text to avoid DOM errors
+  // Only use ReactMarkdown when content is complete
+  if (isLoading) {
+    return (
+      <div className="whitespace-pre-wrap">
+        {safeContent}
+      </div>
+    );
+  }
+
+  // Content is complete, safe to render with ReactMarkdown
+  return (
+    <MarkdownErrorBoundary>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        skipHtml={true}
+      >
+        {safeContent}
+      </ReactMarkdown>
+    </MarkdownErrorBoundary>
+  );
+};
 
 type Gender = 'male' | 'female';
 type ViewType = 'chart' | 'text' | 'analysis' | 'chat';
@@ -113,7 +171,7 @@ const VerticalStar = ({ star, type }: { star: any, type: 'major' | 'minor' | 'ad
   return (
     <div className={cn("flex flex-col items-center leading-none w-[1.1rem] shrink-0", colorClass)}>
       <div className={cn("flex flex-col items-center select-none",
-        type === 'major' ? "text-[15px] font-bold" : (type === 'minor' ? "text-[13px] font-semibold" : "text-[11px] font-normal")
+        type === 'major' ? "text-[11px] md:text-[15px] font-bold" : (type === 'minor' ? "text-[9px] md:text-[13px] font-semibold" : "text-[8px] md:text-[11px] font-normal")
       )}>
         {name.split('').map((char: string, i: number) => (
           <span key={i} className="block leading-[1.1]">{char}</span>
@@ -171,9 +229,9 @@ const Palace = ({ palace, gridArea }: { palace: any, gridArea: string }) => {
   };
 
   return (
-    <div className={cn("border border-[#BDBDBD] relative p-1 md:p-1.5 flex flex-col justify-between bg-white min-h-[140px] md:min-h-0", gridArea)}>
+    <div className={cn("border border-[#BDBDBD] relative p-0.5 md:p-1 flex flex-col justify-between bg-white min-h-[110px] md:min-h-0", gridArea)}>
       {/* Stars Flow */}
-      <div className="flex gap-0.5 flex-wrap items-start content-start min-h-[60px]">
+      <div className="flex gap-0.5 flex-wrap items-start content-start min-h-[50px] md:min-h-[60px]">
         {majorStars.map((s: any, idx: number) => <VerticalStar key={`maj-${idx}`} star={s} type="major" />)}
         {minorStars.map((s: any, idx: number) => <VerticalStar key={`min-${idx}`} star={s} type="minor" />)}
         {adjectiveStars.map((s: any, idx: number) => <VerticalStar key={`adj-${idx}`} star={s} type="adj" />)}
@@ -199,11 +257,11 @@ const Palace = ({ palace, gridArea }: { palace: any, gridArea: string }) => {
       </div>
 
       {/* Footer - Palace Name & Decade */}
-      <div className="flex justify-between items-end pt-1 border-t border-[#E0E0E0] mt-1 select-none">
-        <div className="text-[11px] md:text-[13px] font-bold text-[#212121] leading-none mb-0.5">{decadal.range[0]} - {decadal.range[1]}</div>
+      <div className="flex justify-between items-end pt-0.5 border-t border-[#F0F0F0] mt-0.5 select-none">
+        <div className="text-[10px] md:text-[13px] font-bold text-[#212121] leading-none mb-0.5">{decadal.range[0]} - {decadal.range[1]}</div>
         <div className="flex items-end gap-1">
-          <span className="text-[9px] md:text-[11px] font-bold text-[#9E9E9E] leading-none mb-0.5">{heavenlyStem}{earthlyBranch}</span>
-          <div className="bg-[#FF9800] text-white px-1 md:px-2 py-[1px] md:py-[2px] rounded-[3px] text-[10px] md:text-[12px] font-bold shadow-sm">
+          <span className="text-[8px] md:text-[11px] font-bold text-[#9E9E9E] leading-none mb-0.5">{heavenlyStem}{earthlyBranch}</span>
+          <div className="bg-[#FF9800] text-white px-1 md:px-2 py-[1px] md:py-[2px] rounded-[2px] text-[9px] md:text-[12px] font-bold shadow-sm">
             {name}
           </div>
         </div>
@@ -231,7 +289,7 @@ const TreeAnalysis = ({ astrolabe, data }: { astrolabe: any, data: UserData }) =
 
 // Tree Text Generation Utility completed above.
 
-// AI Streaming Utility
+// AI Streaming Utility with Batched Updates for Performance
 const streamAIResponse = async (
   url: string,
   key: string,
@@ -261,17 +319,57 @@ const streamAIResponse = async (
     const reader = response.body?.getReader();
     const decoder = new TextDecoder('utf-8');
     let fullContent = '';
+    let pendingContent = ''; // Buffer for batched updates
+    let flushTimeout: ReturnType<typeof setTimeout> | null = null;
 
     if (!reader) throw new Error('ReadableStream not supported');
 
+    let buffer = '';
+
+    // Flush pending content to UI at most every 50ms
+    const flushPending = () => {
+      if (pendingContent) {
+        onToken(pendingContent);
+        pendingContent = '';
+      }
+      flushTimeout = null;
+    };
+
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Process any remaining data in buffer before ending
+        if (buffer.trim()) {
+          if (buffer.startsWith('data: ')) {
+            const data = buffer.slice(6);
+            if (data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  fullContent += content;
+                  pendingContent += content;
+                }
+              } catch (e) {
+                // Incomplete JSON at end, ignore
+              }
+            }
+          }
+        }
+        // Flush any remaining content to UI
+        if (flushTimeout) clearTimeout(flushTimeout);
+        flushPending();
+        break;
+      }
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
+        if (line.trim() === '') continue;
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') continue;
@@ -280,10 +378,14 @@ const streamAIResponse = async (
             const content = parsed.choices?.[0]?.delta?.content || '';
             if (content) {
               fullContent += content;
-              onToken(content);
+              pendingContent += content;
+              // Schedule a flush if not already scheduled
+              if (!flushTimeout) {
+                flushTimeout = setTimeout(flushPending, 50);
+              }
             }
           } catch (e) {
-            // Partial JSON or other data
+            // Partial JSON
           }
         }
       }
@@ -313,7 +415,7 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
           { role: 'user', content: chartData }
         ],
         temperature: 0.7,
-        max_tokens: 4096
+        max_tokens: 8192
       },
       (token) => {
         setAnalysis((prev: string) => prev + token);
@@ -343,11 +445,11 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
           <span>{analysis ? '重新生成分析' : '开始专家分析'}</span>
         </button>
       </div>
-      <div className="flex-grow overflow-y-auto p-4 md:p-6 lg:p-10 bg-slate-50/30">
-        <div className="w-full max-w-5xl mx-auto px-2">
+      <div className="flex-grow overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-10 bg-slate-50/30">
+        <div className="w-full max-w-5xl mx-auto px-2 overflow-hidden">
           {analysis ? (
-            <div className="prose prose-indigo prose-sm md:prose-base lg:prose-lg max-w-none text-gray-800 leading-relaxed break-words animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysis}</ReactMarkdown>
+            <div className="prose prose-indigo prose-sm md:prose-base lg:prose-lg max-w-none text-gray-800 leading-relaxed break-words overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+              <SafeMarkdown content={analysis || ''} isLoading={loading} />
               {loading && (
                 <div className="flex items-center gap-2 mt-4 text-purple-600">
                   <div className="flex gap-1">
@@ -425,7 +527,7 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
           ...messages.map(m => ({ role: m.role, content: m.content })),
           { role: 'user', content: input }
         ],
-        max_tokens: 4096
+        max_tokens: 8192
       },
       (token) => {
         setMessages(prev => {
@@ -463,7 +565,7 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-4" ref={scrollRef}>
+      <div className="flex-grow overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-4" ref={scrollRef}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center">
@@ -483,8 +585,8 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
         {messages.map((m, i) => (
           <div key={i} className={cn("flex w-full", m.role === 'user' ? 'justify-end' : 'justify-start')}>
             {m.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 mt-1 shrink-0">
-                <Bot className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 mt-1 shrink-0 select-none">
+                <Bot className={cn("w-4 h-4 text-blue-600", m.content === '' && loading && i === messages.length - 1 && "animate-pulse")} />
               </div>
             )}
             <div className={cn(
@@ -492,25 +594,23 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
               m.role === 'user'
                 ? 'bg-blue-600 text-white rounded-br-none'
                 : 'bg-white text-gray-800 rounded-tl-none border border-gray-100 prose prose-slate'
-            )}>
-              {m.role === 'assistant' ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : m.content}
+            )} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+              {m.role === 'assistant' ? (
+                m.content ? (
+                  <SafeMarkdown content={String(m.content || '')} isLoading={loading && i === messages.length - 1} />
+                ) : (
+                  /* Loading Dots inside the bubble when content is empty */
+                  <div className="flex gap-1.5 py-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200"></span>
+                  </div>
+                )
+              ) : m.content}
             </div>
           </div>
         ))}
-        {loading && (
-          <div className="flex justify-start items-center">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2 shrink-0">
-              <Bot className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm border border-gray-100">
-              <div className="flex gap-1.5">
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100"></span>
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200"></span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Duplicate loading block removed to fix double avatar issue */}
       </div>
 
       <div className="p-4 bg-white border-t shrink-0">
@@ -552,29 +652,8 @@ export default function App() {
     };
   });
 
-  // Calculate Chart
   // Responsive Chart Scaling Logic
-  const [chartScale, setChartScale] = useState(1);
   const chartOuterRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const updateScale = () => {
-      if (window.innerWidth < 768 && chartOuterRef.current) {
-        // Use document element clientWidth for more reliable measurement on mobile
-        const containerWidth = document.documentElement.clientWidth;
-        const padding = 24; // p-2 or p-3 equivalent
-        const availableWidth = containerWidth - padding;
-        const scale = availableWidth / 700;
-        setChartScale(Math.min(scale, 1));
-      } else {
-        setChartScale(1);
-      }
-    };
-
-    window.addEventListener('resize', updateScale);
-    updateScale();
-    return () => window.removeEventListener('resize', updateScale);
-  }, [view]);
 
   const astrolabe = useMemo(() => {
     const [h] = data.time.split(':').map(Number);
@@ -635,7 +714,7 @@ export default function App() {
       <header className="h-14 md:h-16 bg-white shadow-sm flex items-center justify-between px-3 md:px-6 z-40 shrink-0">
         <div className="flex items-center gap-1.5 md:gap-2">
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClick={() => setIsSidebarOpen(prev => !prev)}
             className="md:hidden flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-full shadow-md transition-all active:scale-95"
           >
             <Settings2 className="w-4 h-4" />
@@ -688,7 +767,8 @@ export default function App() {
           "md:w-80 md:h-full md:relative md:translate-x-0 md:bg-white md:shadow-none",
           "fixed inset-y-0 left-0 w-[280px] h-full z-50 shadow-2xl transform",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-          view !== 'chart' && "hidden md:flex"
+          // Removed checking for view !== 'chart' to allow global access on mobile
+          "md:flex"
         )}>
           <div className="md:hidden flex items-center justify-between mb-2">
             <span className="font-bold text-gray-800">设置信息</span>
@@ -757,7 +837,7 @@ export default function App() {
                     className="w-full px-3 py-2.5 bg-white border-2 border-orange-300 rounded-lg text-sm md:text-base font-medium focus:ring-2 focus:ring-orange-400 focus:border-orange-500 outline-none shadow-sm transition-all"
                   />
                 </div>
-                <div className="bg-white/50 p-2 md:p-3 rounded-lg border border-orange-300">
+                <div className="bg-white/50 p-2 md:p-3 rounded-lg border border-orange-300 cursor-pointer" onClick={() => (document.querySelector('input[type="time"]') as HTMLInputElement)?.showPicker?.()}>
                   <label className="text-sm md:text-base text-orange-900 font-black ml-1 flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
                     <span className="text-orange-600">⏰ 出生时辰（重要）</span>
@@ -766,7 +846,7 @@ export default function App() {
                     type="time"
                     value={data.time}
                     onChange={e => setData(d => ({ ...d, time: e.target.value }))}
-                    className="w-full px-4 py-3 bg-white border-2 border-orange-400 rounded-lg text-base md:text-lg font-bold text-orange-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-600 outline-none shadow-md transition-all"
+                    className="w-full px-4 py-4 bg-white border-2 border-orange-400 rounded-xl text-xl font-bold text-orange-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-600 outline-none shadow-md transition-all text-center tracking-widest"
                   />
                 </div>
               </div>
@@ -792,7 +872,7 @@ export default function App() {
         )}>
           <div className={cn(
             "w-full flex flex-col shrink-0",
-            view === 'chart' ? "pt-1 px-2 md:p-8 max-w-[1000px]" : "p-2 md:p-8 max-w-6xl h-full"
+            view === 'chart' ? "pt-1 px-0 md:px-2 md:p-8 max-w-[1000px]" : "p-2 md:p-8 max-w-6xl h-full"
           )}>
             {view === 'chart' && (
               <div className="w-full">
@@ -808,26 +888,21 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div ref={chartOuterRef} className="w-full bg-white shadow-xl md:shadow-2xl rounded-2xl border border-gray-100 p-1 md:p-2 overflow-hidden flex justify-center min-h-[300px]">
+                <div ref={chartOuterRef} className="w-full bg-white md:bg-white shadow-none md:shadow-2xl rounded-none md:rounded-2xl border-none md:border border-gray-100 p-0 md:p-2 overflow-visible flex justify-center mb-24 md:mb-0">
                   <div
-                    className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 transition-transform duration-300 ease-out origin-top"
-                    style={{
-                      width: '700px',
-                      transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
-                      marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '10px'
-                    }}
+                    className="grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 w-full md:max-w-[700px] aspect-[4/5] md:aspect-square"
                   >
                     {/* Center Box */}
-                    <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
+                    <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-2 md:p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
                       {/* Bazi Pillars */}
-                      <div className="w-full flex justify-around items-center mb-6 pt-2 border-b border-dashed border-gray-100 pb-4">
+                      <div className="w-full flex justify-around items-center mb-1.5 md:mb-6 pt-1 md:pt-2 border-b border-dashed border-gray-100 pb-1.5 md:pb-4">
                         {astrolabe.chineseDate.split(' ').map((pillar: string, pillarIdx: number) => (
-                          <div key={pillarIdx} className="flex flex-col items-center gap-1">
+                          <div key={pillarIdx} className="flex flex-col items-center gap-0.5 md:gap-1">
                             <div className="flex flex-col items-center leading-none">
-                              <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[0]))}>{pillar[0]}</span>
-                              <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[1]))}>{pillar[1]}</span>
+                              <span className={cn("text-base md:text-2xl font-serif font-bold", getElementColor(pillar[0]))}>{pillar[0]}</span>
+                              <span className={cn("text-base md:text-2xl font-serif font-bold", getElementColor(pillar[1]))}>{pillar[1]}</span>
                             </div>
-                            <span className="text-[10px] text-gray-400 mt-1">
+                            <span className="text-[8px] md:text-[10px] text-gray-400 mt-0.5 md:mt-1">
                               {['年', '月', '日', '时'][pillarIdx]}
                             </span>
                           </div>
@@ -835,11 +910,11 @@ export default function App() {
                       </div>
 
                       {/* Basic Info */}
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs mb-6 px-4">
-                        <div className="flex justify-between w-28"><span className="text-gray-400">局数</span> <span className="font-bold">{astrolabe.fiveElementsClass}</span></div>
-                        <div className="flex justify-between w-28"><span className="text-gray-400">性别</span> <span className="font-bold">{data.gender === 'male' ? '男' : '女'}</span></div>
-                        <div className="flex justify-between w-28"><span className="text-gray-400">命主</span> <span className="font-bold">{astrolabe.soul}</span></div>
-                        <div className="flex justify-between w-28"><span className="text-gray-400">身主</span> <span className="font-bold">{astrolabe.body}</span></div>
+                      <div className="grid grid-cols-2 gap-x-2 md:gap-x-8 gap-y-0.5 md:gap-y-2 text-[9px] md:text-xs mb-2 md:mb-6 px-1 md:px-4">
+                        <div className="flex justify-between w-16 md:w-28"><span className="text-gray-400">局数</span> <span className="font-bold">{astrolabe.fiveElementsClass}</span></div>
+                        <div className="flex justify-between w-16 md:w-28"><span className="text-gray-400">性别</span> <span className="font-bold">{data.gender === 'male' ? '男' : '女'}</span></div>
+                        <div className="flex justify-between w-16 md:w-28"><span className="text-gray-400">命主</span> <span className="font-bold">{astrolabe.soul}</span></div>
+                        <div className="flex justify-between w-16 md:w-28"><span className="text-gray-400">身主</span> <span className="font-bold">{astrolabe.body}</span></div>
                       </div>
 
                       {/* Major Cycles (Da Yun) */}
@@ -865,8 +940,8 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-2 border-t border-gray-100 w-full text-center">
-                        <div className="text-[10px] text-gray-400 italic">公历 {data.solarDate} {data.time} | 农历 {astrolabe.lunarDate.toString()}</div>
+                      <div className="mt-2 md:mt-4 pt-1 md:pt-2 border-t border-gray-100 w-full text-center">
+                        <div className="text-[8px] md:text-[10px] text-gray-400 italic">公历 {data.solarDate} {data.time} | 农历 {astrolabe.lunarDate.toString()}</div>
                       </div>
                     </div>
 
@@ -918,7 +993,7 @@ export default function App() {
             </div>
           )}
         </main>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
