@@ -343,16 +343,21 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
           <span>{analysis ? '重新生成分析' : '开始专家分析'}</span>
         </button>
       </div>
-      <div className="flex-grow overflow-y-auto p-6 md:p-10 bg-slate-50/30">
-        <div className="max-w-3xl mx-auto">
-          {loading ? (
-            <div className="h-64 flex flex-col items-center justify-center text-gray-500 gap-4">
-              <div className="w-12 h-12 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin"></div>
-              <p className="animate-pulse font-medium text-purple-800">大师正在挑灯推演，请稍候...</p>
-            </div>
-          ) : analysis ? (
-            <div className="prose prose-indigo prose-sm md:prose-base max-w-none text-gray-800 leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex-grow overflow-y-auto p-4 md:p-6 lg:p-10 bg-slate-50/30">
+        <div className="w-full max-w-5xl mx-auto px-2">
+          {analysis ? (
+            <div className="prose prose-indigo prose-sm md:prose-base lg:prose-lg max-w-none text-gray-800 leading-relaxed break-words animate-in fade-in slide-in-from-bottom-2 duration-500">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysis}</ReactMarkdown>
+              {loading && (
+                <div className="flex items-center gap-2 mt-4 text-purple-600">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-2 h-2 bg-purple-600 rounded-full animate-bounce delay-200"></span>
+                  </div>
+                  <span className="text-sm font-medium">正在生成中...</span>
+                </div>
+              )}
               <div className="h-20" /> {/* Bottom spacer for better reading */}
             </div>
           ) : (
@@ -631,9 +636,10 @@ export default function App() {
         <div className="flex items-center gap-1.5 md:gap-2">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 md:hidden hover:bg-gray-100 rounded-lg text-gray-500"
+            className="md:hidden flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-full shadow-md transition-all active:scale-95"
           >
-            <Settings2 className="w-5 h-5" />
+            <Settings2 className="w-4 h-4" />
+            <span className="text-sm font-bold">设置</span>
           </button>
           <div className="w-7 h-7 md:w-8 md:h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-base md:text-lg shadow-sm shrink-0">
             紫
@@ -692,7 +698,7 @@ export default function App() {
           </div>
 
           {/* Date/Time Control */}
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
                 <Settings2 className="w-4 h-4" /> 基础信息
@@ -705,7 +711,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-3 md:p-4 rounded-xl border-2 border-orange-200 shadow-sm space-y-3 md:space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setData(d => ({ ...d, gender: 'male' }))}
@@ -725,12 +731,14 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5 md:space-y-3">
                 {/* Year Shortcut */}
                 <div>
-                  <label className="text-xs text-gray-500 font-medium ml-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> 快速年份</label>
+                  <label className="text-xs md:text-sm text-orange-800 font-bold ml-1 flex items-center gap-1.5 mb-1.5">
+                    <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" /> 快速年份
+                  </label>
                   <select
-                    className="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-200 outline-none"
+                    className="w-full px-3 py-2.5 bg-white border-2 border-orange-300 rounded-lg text-sm md:text-base font-medium focus:ring-2 focus:ring-orange-400 focus:border-orange-500 outline-none shadow-sm"
                     value={data.solarDate.substring(0, 4)}
                     onChange={handleYearChange}
                   >
@@ -739,21 +747,26 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-gray-500 font-medium ml-1">详细公历日期</label>
+                  <label className="text-xs md:text-sm text-orange-800 font-bold ml-1 flex items-center gap-1.5 mb-1.5">
+                    <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" /> 详细公历日期
+                  </label>
                   <input
                     type="date"
                     value={data.solarDate}
                     onChange={e => setData(d => ({ ...d, solarDate: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-all"
+                    className="w-full px-3 py-2.5 bg-white border-2 border-orange-300 rounded-lg text-sm md:text-base font-medium focus:ring-2 focus:ring-orange-400 focus:border-orange-500 outline-none shadow-sm transition-all"
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500 font-medium ml-1">出生时辰</label>
+                <div className="bg-white/50 p-2 md:p-3 rounded-lg border border-orange-300">
+                  <label className="text-sm md:text-base text-orange-900 font-black ml-1 flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
+                    <span className="text-orange-600">⏰ 出生时辰（重要）</span>
+                  </label>
                   <input
                     type="time"
                     value={data.time}
                     onChange={e => setData(d => ({ ...d, time: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-all"
+                    className="w-full px-4 py-3 bg-white border-2 border-orange-400 rounded-lg text-base md:text-lg font-bold text-orange-900 focus:ring-2 focus:ring-orange-500 focus:border-orange-600 outline-none shadow-md transition-all"
                   />
                 </div>
               </div>
@@ -775,78 +788,92 @@ export default function App() {
         {/* View Area - Fixed Viewport Logic */}
         <main className={cn(
           "flex-grow bg-[#F5F7FA] relative flex flex-col items-center overflow-x-hidden",
-          view === 'chart' ? "overflow-y-auto pb-[130px] md:pb-8" : "overflow-hidden" // Full screen for AI views
+          view === 'chart' ? "overflow-y-auto pb-[100px] md:pb-8" : "overflow-hidden" // Full screen for AI views
         )}>
           <div className={cn(
-            "w-full p-2 md:p-8 flex flex-col shrink-0",
-            view === 'chart' ? "max-w-[1000px]" : "max-w-6xl h-full"
+            "w-full flex flex-col shrink-0",
+            view === 'chart' ? "pt-1 px-2 md:p-8 max-w-[1000px]" : "p-2 md:p-8 max-w-6xl h-full"
           )}>
             {view === 'chart' && (
-              <div ref={chartOuterRef} className="w-full bg-white shadow-xl md:shadow-2xl rounded-2xl border border-gray-100 p-1 md:p-2 overflow-hidden flex justify-center min-h-[300px]">
-                <div
-                  className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 transition-transform duration-300 ease-out origin-top"
-                  style={{
-                    width: '700px',
-                    transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
-                    marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '10px'
-                  }}
-                >
-                  {/* Center Box */}
-                  <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
-                    {/* Bazi Pillars */}
-                    <div className="w-full flex justify-around items-center mb-6 pt-2 border-b border-dashed border-gray-100 pb-4">
-                      {astrolabe.chineseDate.split(' ').map((pillar: string, pillarIdx: number) => (
-                        <div key={pillarIdx} className="flex flex-col items-center gap-1">
-                          <div className="flex flex-col items-center leading-none">
-                            <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[0]))}>{pillar[0]}</span>
-                            <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[1]))}>{pillar[1]}</span>
-                          </div>
-                          <span className="text-[10px] text-gray-400 mt-1">
-                            {['年', '月', '日', '时'][pillarIdx]}
-                          </span>
-                        </div>
-                      ))}
+              <div className="w-full">
+                {/* Mobile Hint Card */}
+                <div className="md:hidden mb-3 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl p-3 shadow-sm">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center shrink-0">
+                      <Settings2 className="w-4 h-4 text-white" />
                     </div>
-
-                    {/* Basic Info */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs mb-6 px-4">
-                      <div className="flex justify-between w-28"><span className="text-gray-400">局数</span> <span className="font-bold">{astrolabe.fiveElementsClass}</span></div>
-                      <div className="flex justify-between w-28"><span className="text-gray-400">性别</span> <span className="font-bold">{data.gender === 'male' ? '男' : '女'}</span></div>
-                      <div className="flex justify-between w-28"><span className="text-gray-400">命主</span> <span className="font-bold">{astrolabe.soul}</span></div>
-                      <div className="flex justify-between w-28"><span className="text-gray-400">身主</span> <span className="font-bold">{astrolabe.body}</span></div>
-                    </div>
-
-                    {/* Major Cycles (Da Yun) */}
-                    <div className="w-full mt-auto overflow-hidden">
-                      <div className="text-[10px] text-gray-400 text-center mb-2 flex items-center justify-center gap-2">
-                        <div className="h-px w-8 bg-gray-100"></div> 大运走势 <div className="h-px w-8 bg-gray-100"></div>
-                      </div>
-                      <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2 px-1">
-                        {[...astrolabe.palaces]
-                          .filter((p: any) => p.decadal && p.decadal.range?.[0] !== undefined)
-                          .sort((a: any, b: any) => a.decadal.range[0] - b.decadal.range[0])
-                          .map((p: any, idx: number) => {
-                            const birthYear = parseInt(data.solarDate.split('-')[0]);
-                            const startYear = birthYear + p.decadal.range[0] - 1;
-                            return (
-                              <div key={idx} className="flex flex-col items-center min-w-[3.5rem] shrink-0">
-                                <span className={cn("text-sm font-bold", getElementColor(p.heavenlyStem))}>{p.heavenlyStem}{p.earthlyBranch}</span>
-                                <span className="text-[10px] text-gray-500 font-medium">{p.decadal.range[0]}岁</span>
-                                <span className="text-[9px] text-gray-400 transform scale-90">{startYear}</span>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-2 border-t border-gray-100 w-full text-center">
-                      <div className="text-[10px] text-gray-400 italic">公历 {data.solarDate} {data.time} | 农历 {astrolabe.lunarDate.toString()}</div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-orange-900 mb-1">👈 点击左上角"设置"修改出生信息</p>
+                      <p className="text-xs text-orange-700">性别、日期、时辰都可以调整，命盘会实时更新</p>
                     </div>
                   </div>
+                </div>
+                <div ref={chartOuterRef} className="w-full bg-white shadow-xl md:shadow-2xl rounded-2xl border border-gray-100 p-1 md:p-2 overflow-hidden flex justify-center min-h-[300px]">
+                  <div
+                    className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-200 transition-transform duration-300 ease-out origin-top"
+                    style={{
+                      width: '700px',
+                      transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
+                      marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '10px'
+                    }}
+                  >
+                    {/* Center Box */}
+                    <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
+                      {/* Bazi Pillars */}
+                      <div className="w-full flex justify-around items-center mb-6 pt-2 border-b border-dashed border-gray-100 pb-4">
+                        {astrolabe.chineseDate.split(' ').map((pillar: string, pillarIdx: number) => (
+                          <div key={pillarIdx} className="flex flex-col items-center gap-1">
+                            <div className="flex flex-col items-center leading-none">
+                              <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[0]))}>{pillar[0]}</span>
+                              <span className={cn("text-2xl font-serif font-bold", getElementColor(pillar[1]))}>{pillar[1]}</span>
+                            </div>
+                            <span className="text-[10px] text-gray-400 mt-1">
+                              {['年', '月', '日', '时'][pillarIdx]}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
 
-                  {astrolabe.palaces.map((p: any, idx: number) => (
-                    <Palace key={idx} palace={p} gridArea={PALACE_GRID[p.earthlyBranch]} />
-                  ))}
+                      {/* Basic Info */}
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs mb-6 px-4">
+                        <div className="flex justify-between w-28"><span className="text-gray-400">局数</span> <span className="font-bold">{astrolabe.fiveElementsClass}</span></div>
+                        <div className="flex justify-between w-28"><span className="text-gray-400">性别</span> <span className="font-bold">{data.gender === 'male' ? '男' : '女'}</span></div>
+                        <div className="flex justify-between w-28"><span className="text-gray-400">命主</span> <span className="font-bold">{astrolabe.soul}</span></div>
+                        <div className="flex justify-between w-28"><span className="text-gray-400">身主</span> <span className="font-bold">{astrolabe.body}</span></div>
+                      </div>
+
+                      {/* Major Cycles (Da Yun) */}
+                      <div className="w-full mt-auto overflow-hidden">
+                        <div className="text-[10px] text-gray-400 text-center mb-2 flex items-center justify-center gap-2">
+                          <div className="h-px w-8 bg-gray-100"></div> 大运走势 <div className="h-px w-8 bg-gray-100"></div>
+                        </div>
+                        <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2 px-1">
+                          {[...astrolabe.palaces]
+                            .filter((p: any) => p.decadal && p.decadal.range?.[0] !== undefined)
+                            .sort((a: any, b: any) => a.decadal.range[0] - b.decadal.range[0])
+                            .map((p: any, idx: number) => {
+                              const birthYear = parseInt(data.solarDate.split('-')[0]);
+                              const startYear = birthYear + p.decadal.range[0] - 1;
+                              return (
+                                <div key={idx} className="flex flex-col items-center min-w-[3.5rem] shrink-0">
+                                  <span className={cn("text-sm font-bold", getElementColor(p.heavenlyStem))}>{p.heavenlyStem}{p.earthlyBranch}</span>
+                                  <span className="text-[10px] text-gray-500 font-medium">{p.decadal.range[0]}岁</span>
+                                  <span className="text-[9px] text-gray-400 transform scale-90">{startYear}</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-2 border-t border-gray-100 w-full text-center">
+                        <div className="text-[10px] text-gray-400 italic">公历 {data.solarDate} {data.time} | 农历 {astrolabe.lunarDate.toString()}</div>
+                      </div>
+                    </div>
+
+                    {astrolabe.palaces.map((p: any, idx: number) => (
+                      <Palace key={idx} palace={p} gridArea={PALACE_GRID[p.earthlyBranch]} />
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
