@@ -44,19 +44,13 @@ class MarkdownErrorBoundary extends Component<{ children: ReactNode, fallback?: 
 }
 
 // Safe Markdown wrapper - only render Markdown when content is stable
-const SafeMarkdown = ({ content, isLoading }: { content: string, isLoading?: boolean }) => {
+const SafeMarkdown = ({ content }: { content: string }) => {
   // Ensure content is always a valid string
   const safeContent = typeof content === 'string' ? content : String(content || '');
 
   // During streaming, show plain text to avoid DOM errors
-  // Only use ReactMarkdown when content is complete
-  if (isLoading) {
-    return (
-      <div className="whitespace-pre-wrap">
-        {safeContent}
-      </div>
-    );
-  }
+  // Always render Markdown, even during streaming
+  // The Error Boundary protects against partial content crashes
 
   // Content is complete, safe to render with ReactMarkdown
   return (
@@ -449,7 +443,7 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
         <div className="w-full max-w-5xl mx-auto px-2 overflow-hidden">
           {analysis ? (
             <div className="prose prose-indigo prose-sm md:prose-base lg:prose-lg max-w-none text-gray-800 leading-relaxed break-words overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-              <SafeMarkdown content={analysis || ''} isLoading={loading} />
+              <SafeMarkdown content={analysis || ''} />
               {loading && (
                 <div className="flex items-center gap-2 mt-4 text-purple-600">
                   <div className="flex gap-1">
@@ -597,7 +591,7 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
             )} style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
               {m.role === 'assistant' ? (
                 m.content ? (
-                  <SafeMarkdown content={String(m.content || '')} isLoading={loading && i === messages.length - 1} />
+                  <SafeMarkdown content={String(m.content || '')} />
                 ) : (
                   /* Loading Dots inside the bubble when content is empty */
                   <div className="flex gap-1.5 py-2">
