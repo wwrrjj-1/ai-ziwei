@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* IDE 警告是由于尚未适配 Tailwind v4，此语法在构建中是正确的 */
+
+/* Zi Wei Dou Shu - Clean Professional Theme (Wenmo Tianji Style) */
+:root {
+  --color-zw-red: #D32F2F;
+  --color-zw-blue: #1976D2;
+  --color-zw-black: #212121;
+  --color-zw-gray: #757575;
+  --color-zw-green: #388E3C;
+  --color-zw-purple: #7B1FA2;
+  --color-orange: #F57C00;
+}
+
+/* Base styles - Clean and simple */
+body {
+  background: #f5f5f5;
+  color: #212121;
+  margin: 0;
+  padding: 0;
+  font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+}
+
+/* Remove all fancy animations - keep it professional */
+* {
+  box-sizing: border-box;
+}
+
+/* Simple, functional scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
