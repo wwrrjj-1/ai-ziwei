@@ -231,38 +231,101 @@ const TreeAnalysis = ({ astrolabe }: { astrolabe: any }) => {
 
 // Tree Text Generation Utility completed above.
 
+// AI Streaming Utility
+const streamAIResponse = async (
+  url: string,
+  key: string,
+  body: any,
+  onToken: (token: string) => void,
+  onComplete?: (fullText: string) => void,
+  onError?: (err: any) => void
+) => {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        ...body,
+        stream: true
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.error?.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let fullContent = '';
+
+    if (!reader) throw new Error('ReadableStream not supported');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || '';
+            if (content) {
+              fullContent += content;
+              onToken(content);
+            }
+          } catch (e) {
+            // Partial JSON or other data
+          }
+        }
+      }
+    }
+    onComplete?.(fullContent);
+  } catch (err: any) {
+    console.error("Stream AI Error:", err);
+    onError?.(err);
+  }
+};
+
 // AI Analysis Component
-const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, analysis: string, setAnalysis: (s: string) => void }) => {
+const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, analysis: string, setAnalysis: (s: string) => void | any }) => {
   const [loading, setLoading] = useState(false);
 
   const startAnalysis = async () => {
     setLoading(true);
-    try {
-      const response = await axios.post(
-        'https://api.deepseek.com/chat/completions',
-        {
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: EXPERT_SYSTEM_PROMPT },
-            { role: 'user', content: chartData }
-          ],
-          stream: false,
-          temperature: 0.7,
-          max_tokens: 4096
-        },
-        { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_DEEPSEEK_API_KEY}` } }
-      );
-      if (response.data?.choices?.[0]?.message?.content) {
-        setAnalysis(response.data.choices[0].message.content);
-      } else {
-        throw new Error('Invalid response format');
+    setAnalysis(''); // Clear previous for streaming
+
+    await streamAIResponse(
+      'https://api.deepseek.com/chat/completions',
+      import.meta.env.VITE_DEEPSEEK_API_KEY,
+      {
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: EXPERT_SYSTEM_PROMPT },
+          { role: 'user', content: chartData }
+        ],
+        temperature: 0.7,
+        max_tokens: 4096
+      },
+      (token) => {
+        setAnalysis((prev: string) => prev + token);
+      },
+      () => {
+        setLoading(false);
+      },
+      (err) => {
+        setAnalysis(`分析失败: ${err.message || '网络连接或 API Key 异常'}`);
+        setLoading(false);
       }
-    } catch (err: any) {
-      console.error("DeepSeek API Error details:", err.response?.data || err.message || err);
-      setAnalysis(`分析失败: ${err.response?.data?.error?.message || err.message || '网络连接或 API Key 异常'}`);
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   return (
@@ -323,50 +386,56 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
     setInput('');
     setLoading(true);
 
-    try {
-      const response = await axios.post(
-        'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-        {
-          model: 'glm-4-plus',
-          messages: [
-            {
-              role: 'system', content: EXPERT_SYSTEM_PROMPT + `
-            
-### 交互解读准则：
-1. **紧扣命盘：** 你的所有回答必须以提供的【命盘数据】和【前期分析结果】为唯一依据。严禁脱离实际数据空谈或给出通用的星座式建议。
-2. **直击痛点：** 针对用户的问题，先从命盘中找到支撑数据（如：看事业先看官禄宫及三方四正），再给出详尽解答。
-3. **拒绝说教与空话：** 回答要详尽、专业、客观。必须分析出用户未察觉的深层逻辑（如：为何某年财运好却存不住钱）。
-4. **极致主动：** 
-   - 答完用户问题后，必须根据命盘现状主动指出：
-     - a. 用户目前（当前流年）最应该关注的一件事。
-     - b. 命盘中下一个即将到来的重大机遇或挑战的时间点。
-     - c. 建议用户接下来可以深入咨询的命理方向。
-5. **专家底蕴：** 回答要体现出“大师级”的全局观和细致观察。你已开启 glm-4-plus 联网搜索，可结合当前年份的宏观背景给出更务实的建议。` },
-            { role: 'system', content: `当前时间为${new Date().toLocaleDateString('zh-CN')}` },
-            { role: 'user', content: `这是我的命盘数据：\n${chartData}${existingAnalysis ? `\n\n此前的专家深度分析报告：\n${existingAnalysis}` : ''}` },
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: input }
-          ],
-          max_tokens: 4096
-        },
-        { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_ZHIPU_API_KEY}` } }
-      );
+    const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: Date.now() };
+    setMessages(prev => [...prev, assistantMsg]);
 
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response.data.choices[0].message.content,
-        timestamp: Date.now()
-      }]);
-    } catch (err: any) {
-      console.error("Zhipu AI Error details:", err.response?.data || err.message || err);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `连接异常: ${err.response?.data?.error?.message || err.message || '请重试'}`,
-        timestamp: Date.now()
-      }]);
-    } finally {
-      setLoading(false);
-    }
+    await streamAIResponse(
+      'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+      import.meta.env.VITE_ZHIPU_API_KEY,
+      {
+        model: 'glm-4-plus',
+        messages: [
+          {
+            role: 'system', content: EXPERT_SYSTEM_PROMPT + `
+          
+          ### 交互解读准则：
+          1. **紧扣命盘：** 你的所有回答必须以提供的【命盘数据】和【前期分析结果】为唯一依据。严禁脱离实际数据空谈或给出通用的星座式建议。
+          2. **直击痛点：** 针对用户的问题，先从命盘中找到支撑数据（如：看事业先看官禄宫及三方四正），再给出详尽解答。
+          3. **拒绝说教与空话：** 回答要详尽、专业、客观。必须分析出用户未察觉的深层逻辑（如：为何某年财运好却存不住钱）。
+          4. **极致主动：** 
+             - 答完用户问题后，必须根据命盘现状主动指出：
+               - a. 用户目前（当前流年）最应该关注的一件事。
+               - b. 命盘中下一个即将到来的重大机遇或挑战的时间点。
+               - c. 建议用户接下来可以深入咨询的命理方向。
+          5. **专家底蕴：** 回答要体现出“大师级”的全局观和细致观察。你已开启 glm-4-plus 联网搜索，可结合当前年份的宏观背景给出更务实的建议。`
+          },
+          { role: 'system', content: `当前时间为${new Date().toLocaleDateString('zh-CN')}` },
+          { role: 'user', content: `这是我的命盘数据：\n${chartData}${existingAnalysis ? `\n\n此前的专家深度分析报告：\n${existingAnalysis}` : ''}` },
+          ...messages.map(m => ({ role: m.role, content: m.content })),
+          { role: 'user', content: input }
+        ],
+        max_tokens: 4096
+      },
+      (token) => {
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last.role === 'assistant') {
+            return [...prev.slice(0, -1), { ...last, content: last.content + token }];
+          }
+          return prev;
+        });
+      },
+      () => {
+        setLoading(false);
+      },
+      (err) => {
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          return [...prev.slice(0, -1), { ...last, content: `连接异常: ${err.message || '请重试'}` }];
+        });
+        setLoading(false);
+      }
+    );
   };
 
   return (
@@ -468,6 +537,27 @@ export default function App() {
   });
 
   // Calculate Chart
+  // Responsive Chart Scaling Logic
+  const [chartScale, setChartScale] = useState(1);
+  const chartOuterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (window.innerWidth < 768 && chartOuterRef.current) {
+        const containerWidth = chartOuterRef.current.clientWidth;
+        // Target 700px min width for the chart to be readable
+        const scale = (containerWidth - 16) / 700;
+        setChartScale(Math.min(scale, 1));
+      } else {
+        setChartScale(1);
+      }
+    };
+
+    window.addEventListener('resize', updateScale);
+    updateScale();
+    return () => window.removeEventListener('resize', updateScale);
+  }, [view]);
+
   const astrolabe = useMemo(() => {
     const [h] = data.time.split(':').map(Number);
     const timeIndex = h === 23 ? 0 : Math.floor((h + 1) / 2);
@@ -649,11 +739,14 @@ export default function App() {
         </aside>
 
         {/* View Area - Reduced padding on mobile */}
-        <main className="flex-grow bg-[#F5F7FA] p-2 md:p-8 overflow-auto flex justify-center">
+        <main className="flex-grow bg-[#F5F7FA] p-2 md:p-8 overflow-auto flex justify-center relative pb-20 md:pb-8">
           <div className="w-full max-w-[1000px] h-full flex flex-col">
             {view === 'chart' && (
-              <div className="w-full bg-white shadow-lg md:shadow-xl rounded-sm border border-gray-200 p-0.5 md:p-1 overflow-x-auto overflow-y-hidden">
-                <div className="min-w-[700px] md:min-w-0 aspect-square grid grid-cols-4 grid-rows-4 w-full bg-[#FAFAFA] border border-gray-300">
+              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-sm border border-gray-200 p-0.5 md:p-1 overflow-hidden">
+                <div
+                  className="min-w-[700px] aspect-square grid grid-cols-4 grid-rows-4 w-full bg-[#FAFAFA] border border-gray-300 transition-transform duration-300 ease-out origin-top-left"
+                  style={{ transform: chartScale < 1 ? `scale(${chartScale})` : 'none' }}
+                >
                   {/* Center Box */}
                   <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
                     {/* Bazi Pillars */}
@@ -733,6 +826,24 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* Mobile Bottom Quick Actions */}
+          {view === 'chart' && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-3 flex gap-3 md:hidden z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+              <button
+                onClick={() => setView('analysis')}
+                className="flex-1 bg-purple-600 text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-purple-200 active:scale-95 transition-all text-sm"
+              >
+                <Sparkles className="w-4 h-4" /> 专家深度分析
+              </button>
+              <button
+                onClick={() => setView('chat')}
+                className="flex-1 bg-blue-600 text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-sm"
+              >
+                <MessageCircle className="w-4 h-4" /> 命理专家咨询
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </div>
