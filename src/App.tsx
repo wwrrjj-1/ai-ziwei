@@ -42,7 +42,7 @@ const EXPERT_SYSTEM_PROMPT = `你现在是顶级紫微斗数及国学易经术�
 *重要：结尾请务必告知用户：“以上分析基于术数理论，仅供国学研究及娱乐参考，人生掌握在自己手中。”*`;
 
 // Utility to generate the EXACT Tree Format requested by User
-const generateProfessionalTreeText = (astrolabe: any) => {
+const generateProfessionalTreeText = (astrolabe: any, data: UserData) => {
   const getMutagenPrefix = (s: any) => {
     if (s.mutagen) return `[生年${s.mutagen}]`;
     if (s.selfMutagen) return `(↓:${s.selfMutagen})`;
@@ -60,11 +60,12 @@ const generateProfessionalTreeText = (astrolabe: any) => {
   text += "│ ├(┏ : 生日前小限)\n";
   text += "│ └( ┓: 生日后小限)\n│\n";
 
-  text += "├基本信息\n";
+  text += "├命主出生信息\n";
   text += "│ │\n";
   text += ` │ ├性别 : ${astrolabe.gender}\n`;
-  text += ` │ ├公历时间 : ${astrolabe.solarDate}\n`;
-  text += ` │ ├农历时间 : ${astrolabe.lunarDate.toString()}\n`;
+  text += ` │ ├公历出生日期 : ${astrolabe.solarDate}\n`;
+  text += ` │ ├农历出生日期 : ${astrolabe.lunarDate.toString()}\n`;
+  text += ` │ ├出生时间(时:分) : ${data.time}\n`;
   text += ` │ ├五行局数 : ${astrolabe.fiveElementsClass}\n`;
   const bodyPalace = astrolabe.palaces.find((p: any) => p.isBodyPalace);
   text += ` │ └身主:${astrolabe.body}; 命主:${astrolabe.soul}; 子年斗君:巳; 身宫:${bodyPalace ? bodyPalace.earthlyBranch : ''}\n│\n`;
@@ -212,8 +213,8 @@ const Palace = ({ palace, gridArea }: { palace: any, gridArea: string }) => {
 };
 
 // Tree Text Component
-const TreeAnalysis = ({ astrolabe }: { astrolabe: any }) => {
-  const treeText = useMemo(() => generateProfessionalTreeText(astrolabe), [astrolabe]);
+const TreeAnalysis = ({ astrolabe, data }: { astrolabe: any, data: UserData }) => {
+  const treeText = useMemo(() => generateProfessionalTreeText(astrolabe, data), [astrolabe, data]);
 
   return (
     <div className="h-full bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
@@ -408,8 +409,8 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
                - c. 建议用户接下来可以深入咨询的命理方向。
           5. **专家底蕴：** 回答要体现出“大师级”的全局观和细致观察。你已开启 glm-4-plus 联网搜索，可结合当前年份的宏观背景给出更务实的建议。`
           },
-          { role: 'system', content: `当前时间为${new Date().toLocaleDateString('zh-CN')}` },
-          { role: 'user', content: `这是我的命盘数据：\n${chartData}${existingAnalysis ? `\n\n此前的专家深度分析报告：\n${existingAnalysis}` : ''}` },
+          { role: 'system', content: `当前时间为${new Date().toLocaleDateString('zh-CN')}。请注意：下方传送的数据是该用户的【出生命盘数据】，请据此进行终身运势分析或针对性咨询。` },
+          { role: 'user', content: `这是我的【生辰八字/紫微斗数命盘数据】：\n${chartData}${existingAnalysis ? `\n\n此前的专家深度分析报告：\n${existingAnalysis}` : ''}` },
           ...messages.map(m => ({ role: m.role, content: m.content })),
           { role: 'user', content: input }
         ],
@@ -567,7 +568,7 @@ export default function App() {
   }, [data]);
 
   // EXACT Tree format for AI context
-  const expertChartText = useMemo(() => generateProfessionalTreeText(astrolabe), [astrolabe]);
+  const expertChartText = useMemo(() => generateProfessionalTreeText(astrolabe, data), [astrolabe, data]);
 
   // Reset analysis when data changes substantially (conceptually user might want to keep it, but usually new chart = new analysis)
   // For now, let's keep it manual clear or just let user regenerate. 
@@ -835,7 +836,7 @@ export default function App() {
               </div>
             )}
 
-            {view === 'text' && <TreeAnalysis astrolabe={astrolabe} />}
+            {view === 'text' && <TreeAnalysis astrolabe={astrolabe} data={data} />}
             {view === 'analysis' && (
               <AIAnalysis
                 chartData={expertChartText}
