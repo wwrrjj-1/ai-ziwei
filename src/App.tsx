@@ -3,7 +3,6 @@ import { Layout, FileText, Settings2, Info, Bot, MessageCircle, Send, Sparkles, 
 import { astro } from 'iztro';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import axios from 'axios';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -296,7 +295,7 @@ const streamAIResponse = async (
 };
 
 // AI Analysis Component
-const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, analysis: string, setAnalysis: (s: string) => void | any }) => {
+const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, analysis: string, setAnalysis: React.Dispatch<React.SetStateAction<string>> }) => {
   const [loading, setLoading] = useState(false);
 
   const startAnalysis = async () => {
@@ -525,6 +524,7 @@ export default function App() {
   const [view, setView] = useState<ViewType>('chart');
   const [aiAnalysisResult, setAiAnalysisResult] = useState<string>('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Default to CURRENT time
   const [data, setData] = useState<UserData>(() => {
@@ -614,14 +614,19 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-[#f3f4f6] flex flex-col text-[#333] font-sans overflow-hidden">
       {/* Top Navigation - Responsive Height */}
-      <header className="h-14 md:h-16 bg-white shadow-sm flex items-center justify-between px-3 md:px-6 z-20 shrink-0">
+      <header className="h-14 md:h-16 bg-white shadow-sm flex items-center justify-between px-3 md:px-6 z-40 shrink-0">
         <div className="flex items-center gap-1.5 md:gap-2">
-          <div className="w-7 h-7 md:w-8 md:h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-base md:text-lg shadow-sm">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-1.5 md:hidden hover:bg-gray-100 rounded-lg text-gray-500"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
+          <div className="w-7 h-7 md:w-8 md:h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-base md:text-lg shadow-sm shrink-0">
             紫
           </div>
-          <span className="font-bold text-base md:text-lg tracking-tight text-gray-800">
+          <span className="font-bold text-base md:text-lg tracking-tight text-gray-800 truncate">
             紫微<span className="hidden sm:inline">斗数</span>
-            <span className="text-gray-400 font-normal text-[10px] ml-1 hidden xs:inline">PRO</span>
           </span>
         </div>
 
@@ -650,12 +655,28 @@ export default function App() {
 
       {/* Main Content - Vertical on Mobile, Horizontal on Desktop */}
       <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
-        {/* Sidebar Controls - Drawer-like on Mobile, Fixed on Desktop */}
+        {/* Sidebar Overlay for Mobile */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar Controls - Drawer on Mobile, Fixed on Desktop */}
         <aside className={cn(
-          "bg-white border-r border-gray-200 flex flex-col p-4 md:p-5 gap-4 md:gap-6 z-10 shrink-0 overflow-y-auto transition-all",
-          "w-full md:w-80 h-auto md:h-full border-b md:border-b-0",
-          view !== 'chart' && "hidden md:flex" // Hide sidebar on analysis/chat views on mobile
+          "bg-white border-r border-gray-200 flex flex-col p-4 md:p-5 gap-4 md:gap-6 shrink-0 overflow-y-auto transition-all duration-300 ease-in-out",
+          "md:w-80 md:h-full md:relative md:translate-x-0 md:bg-white md:shadow-none",
+          "fixed inset-y-0 left-0 w-[280px] h-full z-50 shadow-2xl transform",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+          view !== 'chart' && "hidden md:flex"
         )}>
+          <div className="md:hidden flex items-center justify-between mb-2">
+            <span className="font-bold text-gray-800">设置信息</span>
+            <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-gray-100 rounded">
+              <RefreshCw className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
 
           {/* Date/Time Control */}
           <div className="space-y-4">
