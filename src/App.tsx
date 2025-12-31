@@ -626,7 +626,7 @@ export default function App() {
             紫
           </div>
           <span className="font-bold text-base md:text-lg tracking-tight text-gray-800 truncate">
-            紫微<span className="hidden sm:inline">斗数</span>
+            紫微<span className="hidden sm:inline">斗数</span>命理
           </span>
         </div>
 
@@ -763,10 +763,14 @@ export default function App() {
         <main className="flex-grow bg-[#F5F7FA] p-2 md:p-8 overflow-auto flex justify-center relative pb-20 md:pb-8">
           <div className="w-full max-w-[1000px] h-full flex flex-col">
             {view === 'chart' && (
-              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-sm border border-gray-200 p-0.5 md:p-1 overflow-hidden">
+              <div ref={chartOuterRef} className="w-full bg-white shadow-lg md:shadow-xl rounded-sm border border-gray-200 p-0.5 md:p-1 overflow-hidden flex justify-center">
                 <div
-                  className="min-w-[700px] aspect-square grid grid-cols-4 grid-rows-4 w-full bg-[#FAFAFA] border border-gray-300 transition-transform duration-300 ease-out origin-top-left"
-                  style={{ transform: chartScale < 1 ? `scale(${chartScale})` : 'none' }}
+                  className="aspect-square grid grid-cols-4 grid-rows-4 bg-[#FAFAFA] border border-gray-300 transition-transform duration-300 ease-out origin-top"
+                  style={{
+                    width: '700px',
+                    transform: chartScale < 1 ? `scale(${chartScale})` : 'none',
+                    marginBottom: chartScale < 1 ? `-${700 * (1 - chartScale)}px` : '0px'
+                  }}
                 >
                   {/* Center Box */}
                   <div className="col-start-2 col-end-4 row-start-2 row-end-4 flex flex-col items-center p-4 border border-[#BDBDBD] bg-white text-[#424242] overflow-hidden">
@@ -850,18 +854,18 @@ export default function App() {
 
           {/* Mobile Bottom Quick Actions */}
           {view === 'chart' && (
-            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-3 flex gap-3 md:hidden z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 p-4 flex gap-4 md:hidden z-[60] shadow-[0_-8px_20px_rgba(0,0,0,0.1)]">
               <button
                 onClick={() => setView('analysis')}
-                className="flex-1 bg-purple-600 text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-purple-200 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl py-4 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-purple-200 active:scale-95 transition-all text-sm"
               >
-                <Sparkles className="w-4 h-4" /> 专家深度分析
+                <Sparkles className="w-5 h-5" /> 专家深度分析
               </button>
               <button
                 onClick={() => setView('chat')}
-                className="flex-1 bg-blue-600 text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl py-4 px-4 flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all text-sm"
               >
-                <MessageCircle className="w-4 h-4" /> 命理专家咨询
+                <MessageCircle className="w-5 h-5" /> 命理专家咨询
               </button>
             </div>
           )}
