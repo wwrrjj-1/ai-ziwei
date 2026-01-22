@@ -1,5 +1,4 @@
 {
-    "$schema": "https://json.schemastore.org/zeabur-service-spec.json",
     "build": {
         "type": "node",
         "install_command": "npm install",
