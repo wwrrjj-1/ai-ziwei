@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
@@ -12,7 +12,7 @@ WORKDIR /app
 
 # 只安装生产依赖
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # 复制构建产物和服务器
 COPY --from=builder /app/dist ./dist
