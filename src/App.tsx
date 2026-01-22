@@ -286,7 +286,6 @@ const TreeAnalysis = ({ astrolabe, data }: { astrolabe: any, data: UserData }) =
 // AI Streaming Utility with Batched Updates for Performance
 const streamAIResponse = async (
   url: string,
-  key: string,
   body: any,
   onToken: (token: string) => void,
   onComplete?: (fullText: string) => void,
@@ -297,7 +296,7 @@ const streamAIResponse = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
+        // Authorization handled by backend
       },
       body: JSON.stringify({
         ...body,
@@ -306,8 +305,8 @@ const streamAIResponse = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData?.error?.message || `HTTP error! status: ${response.status}`);
+      const errorData = await response.text().catch(() => ''); // Changed to text() as backend might return text error
+      throw new Error(errorData || `HTTP error! status: ${response.status}`);
     }
 
     const reader = response.body?.getReader();
@@ -400,8 +399,7 @@ const AIAnalysis = ({ chartData, analysis, setAnalysis }: { chartData: string, a
     setAnalysis(''); // Clear previous for streaming
 
     await streamAIResponse(
-      'https://api.deepseek.com/chat/completions',
-      import.meta.env.VITE_DEEPSEEK_API_KEY,
+      '/api/analyze',
       {
         model: 'deepseek-chat',
         messages: [
@@ -497,8 +495,7 @@ const ChatInterface = ({ chartData, messages, setMessages, existingAnalysis }: {
     setMessages(prev => [...prev, assistantMsg]);
 
     await streamAIResponse(
-      'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-      import.meta.env.VITE_ZHIPU_API_KEY,
+      '/api/chat',
       {
         model: 'glm-4-plus',
         messages: [
