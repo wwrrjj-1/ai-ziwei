@@ -1,5 +1,12 @@
 {
-    "build_command": "npm run build",
-    "start_command": "npm start",
-    "output_dir": "dist"
+    "$schema": "https://json.schemastore.org/zeabur-service-spec.json",
+    "build": {
+        "type": "node",
+        "install_command": "npm install",
+        "build_command": "npm run build"
+    },
+    "runtime": {
+        "type": "node",
+        "command": "node server.js"
+    }
 }
